@@ -88,7 +88,7 @@ Object subclass: DictionaryAssignment [
             1 to: (count min: 10) do: [:i | bar at: i put: $*].
             Transcript show: letter asString, ' | ', bar.
             count > 10 ifTrue: [
-                Transcript show: ' (', (count - 10) asString, ')'.
+                (' (', (count - 10) asString, ')') display.
             ].
             Transcript cr.
         ].
@@ -96,36 +96,59 @@ Object subclass: DictionaryAssignment [
 
     "Helper Method: Print Word Histogram"
     printWordHistogram [
-        | maxWordLength maxFreq sortedWords dashCount |
+        | maxWordLength maxFreq sortedWords dashCount stPoc dashIncrement |
         '/--------------\' displayNl.
         '|   Histogram  |' displayNl.
         '\--------------/' displayNl.
 
         "Sort words by frequency"
-        sortedWords := wordFreq associations collect: [:assoc | assoc value -> assoc key ].
+        sortedWords := wordFreq associations
+              sorted: [:a :b | a value > b value ].
 
-        maxWordLength := (sortedWords collect: [:entry | entry value size ]) inject: 0 into: [:max :each | max max: each].
-        maxFreq := (sortedWords collect: [:entry | entry key ]) inject: 0 into: [:max :each | max max: each].
-        dashCount := (maxWordLength + 2) * 2.
+        maxWordLength := (sortedWords collect: [:entry | entry key size ]) inject: 0 into: [:max :each | max max: each].
+        maxFreq := (sortedWords collect: [:entry | entry value]) inject: 0 into: [:max :each | max max: each].
+        dashCount := (maxWordLength * 2) + (sortedWords size * 2).
+	
+	stPoc := ((maxWordLength * 2) + 1).
 
-        1 to: maxFreq do: [:row |
-            Transcript show: (self repeatedString: $  count: dashCount).
+
+	maxFreq to: 1 by: -1 do: [:row |
+            Transcript show: (self repeatedString: $  count: stPoc).
+
             sortedWords do: [:entry |
-                (entry key >= row) ifTrue: [ Transcript show: '* ' ] ifFalse: [ Transcript show: '  ' ].
-            ].
+                (entry value >= row) ifTrue: [ Transcript show: '* ' ] 
+                ifFalse: [ Transcript show: ' ' ]. 
+            ]. 
             Transcript cr.
         ].
 
         Transcript show: (self repeatedString: $- count: dashCount); cr.
+
+	Transcript show: (self repeatedString: $  count: ((maxWordLength * 2) + 1)).
+
+        1 to: ((dashCount - (maxWordLength * 2)) // 2) do: [:i |
+               Transcript show: '^ '.
+        ].
+
+	Transcript cr.
+
+
+	dashIncrement := maxWordLength + 1.
         sortedWords do: [:entry |
             | padding paddedWord |
-            padding := String new: (maxWordLength - entry value size).
+            padding := String new: (maxWordLength - entry key size).
             1 to: padding size do: [:i | padding at: i put: $ ].
-            paddedWord := entry value asString , padding.
+            paddedWord := entry key asString , padding.
             Transcript show: paddedWord.
-            Transcript show: ' | ', (self repeatedString: $- count: maxWordLength), '/ '.
+            Transcript show:  '', (self repeatedString: $- count: dashIncrement), '/ '.
+            1 to: ((dashCount - (dashIncrement) - maxWordLength)) // 2 do: [:i |
+                  Transcript show: '| '.
+            ].
             Transcript cr.
+	    dashIncrement := dashIncrement + 2.
         ].
+
+
     ]
 
     "Helper Method: Repeated String"
@@ -188,6 +211,12 @@ Object subclass: DictionaryAssignment [
 ].
 
 "Run the script"
-| assignment |
+| assignment fileName |
+
+"Prompt the user to enter a filename"
+Transcript show: 'Enter the name of the file: '.
+fileName := FileStream stdin nextLine.
+
+"Create an instance and run the assignment with the provided filename"
 assignment := DictionaryAssignment new.
-assignment runAssignment: 'data.txt'.
+assignment runAssignment: fileName.
